@@ -1,24 +1,16 @@
-# echo-client.py
-
 #TODO: send multi line message  (if input only enter, then stop joining the messages)
     #1 message, not multiple
 
 import socket
 
-inp = input("Load file? y/n\n")
-loadFile = False
-if inp.lower() == 'y':
-    loadFile = True
-elif inp.lower() != 'n':
-    exit(69420)
-
 HOST = ''
 PORT = ''
-username = ''
+USERNAME = ''
 
-array = [HOST, PORT, username]
+array = [HOST, PORT, USERNAME]
 
-if loadFile:
+
+try:
     with open('.config') as file:
         i = 0
         for line in file:
@@ -28,26 +20,22 @@ if loadFile:
                 i+=1
         
 
-        #TODO: *pukes* *puuuukes*
-        HOST = array[0]
-        PORT = int(array[1])
-        username = array[2]
-            
-
-else:
-    HOST = input("Enter host: ") #HOST = "152.66.181.95"  # The server's hostname or IP address
-    PORT = int(input("Enter port: ")) #PORT = 65432  # The port used by the server
+        #TODO: *pukes* *pukes more*
+        HOST, PORT, USERNAME = array
+        PORT = int(PORT)
+except FileNotFoundError:
+    #HOST = input("Enter host: ") #HOST = "152.66.181.95"  # The server's hostname or IP address
+    HOST = socket.gethostbyname(socket.gethostname())
+    #PORT = int(input("Enter port: ")) #PORT = 65432  # The port used by the server
+    PORT = 6969
+    USERNAME = input("Enter username: ") #TODO: check if username is empty
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
-    if username == '':
-        username = input("Enter username: ")
-    print(f"Connected as {username}")
+    print(f"Connected as {USERNAME}")
     while True:
-        temp = input("$ ")
-        msg = f"{username}: " + temp
-        msg = bytes(msg, 'utf-8')
-        if msg == "":
+        msg = bytes(f"{USERNAME}: {input('$ ')}", 'utf-8')
+        if msg.strip() is None:
             break
         s.sendall(msg)
 

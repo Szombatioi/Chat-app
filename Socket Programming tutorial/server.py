@@ -1,8 +1,6 @@
-# echo-server.py
-
 import socket
 
-HOST = "152.66.181.95"  # Standard loopback interface address (localhost) -> can be hostname, IP address (IPv4 format) or empty string (accepts connection on every IPv4 interface) 
+HOST = socket.gethostbyname(socket.gethostname())  # Standard loopback interface address (localhost) -> can be hostname, IP address (IPv4 format) or empty string (accepts connection on every IPv4 interface) 
 PORT = 6969  # Port to listen on (non-privileged ports are > 1023)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: #sockets support context manager type (use with)
