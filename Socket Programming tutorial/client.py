@@ -1,5 +1,6 @@
 #TODO: send multi line message  (if input only enter, then stop joining the messages)
     #1 message, not multiple
+#TODO: 2 threads for sending and recieving
 
 import socket
 
@@ -30,16 +31,24 @@ except FileNotFoundError:
     PORT = 6969
     USERNAME = input("Enter username: ") #TODO: check if username is empty
 
+run = True
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     print(f"Connected as {USERNAME}")
-    while True:
-        msg = bytes(f"{USERNAME}: {input('$ ')}", 'utf-8')
-        if msg.strip() is None:
+    
+    #? thread
+    
+    while run:
+        inp = input('$ ')
+        if inp == "exit":
+            print("exiting")
+            run = False
             break
+        msg = bytes(f"{USERNAME}: {inp}", 'utf-8')
         s.sendall(msg)
 
         data = s.recv(1024)
 
         #print(f"Received {data!r}")
         print(f"{data.decode('utf-8')}")
+input("Press anything to exit")
