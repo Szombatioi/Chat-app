@@ -1,14 +1,44 @@
-#TODO: send multi line message  (if input only enter, then stop joining the messages)
-    #1 message, not multiple
-#TODO: 2 threads for sending and recieving
-
 import socket
+import threading
+
+#todo: send multi line message  (if input only enter, then stop joining the messages)
+    #send in 1 message, not multiple
+
+import run
 
 HOST = ''
 PORT = ''
 USERNAME = ''
 
 array = [HOST, PORT, USERNAME]
+
+msgQueue = []
+dataQueue = []
+Runner = run.Run() #run = True
+
+def sendMsgThread(runner: run):
+    while runner.getRun():
+        inp = input('$ ')
+        if inp == "exit":
+            print("exiting")
+            runner.stop()
+            break
+        msg = bytes(f"{USERNAME}: {inp}", 'utf-8')
+        msgQueue.append(msg)
+
+def getDataThread(runner: run, s: socket):
+    while runner.getRun():
+        try:
+            data = s.recv(1024)
+            if data.strip() is not None:
+                dataQueue.append(data)
+        except ConnectionAbortedError:
+            print("Server closed the connection")
+            runner.stop()
+
+
+
+
 
 
 try:
@@ -19,9 +49,7 @@ try:
             if(line):
                 array[i] = line
                 i+=1
-        
-
-        #TODO: *pukes* *pukes more*
+        #todo: *pukes* *pukes more*
         HOST, PORT, USERNAME = array
         PORT = int(PORT)
 except FileNotFoundError:
@@ -29,26 +57,25 @@ except FileNotFoundError:
     HOST = socket.gethostbyname(socket.gethostname())
     #PORT = int(input("Enter port: ")) #PORT = 65432  # The port used by the server
     PORT = 6969
-    USERNAME = input("Enter username: ") #TODO: check if username is empty
+    USERNAME = input("Enter username: ") #todo: check if username is empty
 
-run = True
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     print(f"Connected as {USERNAME}")
     
     #? thread
+    t1 = threading.Thread(target=sendMsgThread, args=(Runner, ))
+    t1.start()
     
-    while run:
-        inp = input('$ ')
-        if inp == "exit":
-            print("exiting")
-            run = False
-            break
-        msg = bytes(f"{USERNAME}: {inp}", 'utf-8')
-        s.sendall(msg)
+    t2 = threading.Thread(target=getDataThread, args=(Runner, s,))
+    t2.start()
+    
+    while Runner.getRun():
+        if msgQueue.__len__() > 0:
+            s.sendall(msgQueue.pop(0))
 
-        data = s.recv(1024)
-
-        #print(f"Received {data!r}")
-        print(f"{data.decode('utf-8')}")
+        if dataQueue.__len__() > 0:
+            print(f"{dataQueue.pop(0).decode('utf-8')}")
+t1.join()
+t2.join()
 input("Press anything to exit")
