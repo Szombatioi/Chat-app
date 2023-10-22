@@ -1,5 +1,6 @@
 import socket
 import threading
+import GUI
 
 #todo: send multi line message  (if input only enter, then stop joining the messages)
     #send in 1 message, not multiple
@@ -36,6 +37,17 @@ def getDataThread(runner: run, s: socket):
             print("Server closed the connection")
             runner.stop()
 
+def manageThread(s: socket, gui: GUI):
+    while Runner.getRun():
+        if msgQueue.__len__() > 0:
+            _msg = msgQueue.pop(0)
+            s.sendall(_msg)
+            gui.addText(_msg)
+
+        if dataQueue.__len__() > 0:
+            _msg = dataQueue.pop(0).decode('utf-8')
+            print(_msg)
+            gui.addText(_msg)
 
 
 
@@ -59,23 +71,25 @@ except FileNotFoundError:
     PORT = 6969
     USERNAME = input("Enter username: ") #todo: check if username is empty
 
+gui = GUI.GUI(USERNAME)
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     print(f"Connected as {USERNAME}")
     
     #? thread
     t1 = threading.Thread(target=sendMsgThread, args=(Runner, ))
-    t1.start()
-    
     t2 = threading.Thread(target=getDataThread, args=(Runner, s,))
-    t2.start()
+    t3 = threading.Thread(target=manageThread, args=(s, gui,))
     
-    while Runner.getRun():
-        if msgQueue.__len__() > 0:
-            s.sendall(msgQueue.pop(0))
+    threads = [t1,t2,t3]
+    for t in threads:
+        t.start()
+    
+    
+    gui.startWindow()
+    
+for t in threads:
+    t.join()
 
-        if dataQueue.__len__() > 0:
-            print(f"{dataQueue.pop(0).decode('utf-8')}")
-t1.join()
-t2.join()
 input("Press anything to exit")

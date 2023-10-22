@@ -1,5 +1,6 @@
 import socket
 import threading
+import GUI
 
 #todo: handle multiple connections
 #todo: Better console drawing (curses)
@@ -34,8 +35,20 @@ def getDataThread(runner: run, conn):
         except ConnectionResetError:
             print("Error occured, shutting down server")
             runner.stop()
+            
+def manageThread(conn, gui: GUI):
+    while Runner.getRun():
+        if msgQueue.__len__() > 0:
+            _msg = msgQueue.pop(0)
+            conn.sendall(_msg)
+            gui.addText(_msg)
 
+        if dataQueue.__len__() > 0:
+            _msg = dataQueue.pop(0).decode('utf-8')
+            print(_msg)
+            gui.addText(_msg)
 
+gui = GUI.GUI(USERNAME)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: #sockets support context manager type (use with)
     #AF_INET -> address family for IPv4
@@ -51,16 +64,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: #sockets support co
         #? thread
         t1 = threading.Thread(target=sendMsgThread, args=(Runner,))
         t2 = threading.Thread(target=getDataThread, args=(Runner,conn,))
+        t3 = threading.Thread(target=manageThread, args=(conn, gui,))
+    
+        threads = [t1,t2,t3]
+        for t in threads:
+            t.start()
         
-        t1.start()
-        t2.start()
         
-        while Runner.getRun():
-            if msgQueue.__len__() > 0:
-                conn.sendall(msgQueue.pop(0))
+        gui.startWindow()
 
-            if dataQueue.__len__() > 0:
-                print(f"{dataQueue.pop(0).decode('utf-8')}")
-t1.join()
-t2.join()
+for t in threads:
+    t.join()
 input("Press anything to exit")
